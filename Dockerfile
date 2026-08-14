@@ -55,10 +55,10 @@ RUN ARCH=$(dpkg --print-architecture) && \
   curl -fsSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-${FZF_ARCH}.tar.gz" | tar -xz -C /usr/local/bin
 
 # Create directories and set ownership (combined for fewer layers)
-RUN mkdir -p /commandhistory /workspace /home/vscode/.claude /opt && \
+RUN mkdir -p /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /home/vscode/.prime /opt && \
   touch /commandhistory/.bash_history && \
   touch /commandhistory/.zsh_history && \
-  chown -R vscode:vscode /commandhistory /workspace /home/vscode/.claude /opt
+  chown -R vscode:vscode /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /home/vscode/.prime /opt
 
 # Set environment variables
 ENV DEVCONTAINER=true
@@ -86,14 +86,25 @@ RUN uv python install 3.13 --default
 # Install ast-grep (AST-based code search)
 RUN uv tool install ast-grep-cli
 
-# Install fnm (Fast Node Manager) and Node 22
+# Install fnm (Fast Node Manager), Node 22, and Codex CLI
 ARG NODE_VERSION=22
 ENV FNM_DIR="/home/vscode/.fnm"
 RUN curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$FNM_DIR" --skip-shell && \
   export PATH="$FNM_DIR:$PATH" && \
   eval "$(fnm env)" && \
   fnm install ${NODE_VERSION} && \
-  fnm default ${NODE_VERSION}
+  fnm default ${NODE_VERSION} && \
+  npm install -g @openai/codex && \
+  mkdir -p /home/vscode/.local/bin && \
+  ln -sf "$(command -v codex)" /home/vscode/.local/bin/codex && \
+  ln -sf "$(command -v node)" /home/vscode/.local/bin/node && \
+  ln -sf "$(command -v npm)" /home/vscode/.local/bin/npm
+
+# Install Prime Agent (Prime Intellect). Verified-release installer; installs via npm -g.
+RUN export PATH="$FNM_DIR:$PATH" && eval "$(fnm env)" && \
+  curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh && \
+  ln -sf "$(command -v prime-agent)" /home/vscode/.local/bin/prime-agent && \
+  prime-agent --version
 
 # Install Oh My Zsh
 # renovate: datasource=github-releases depName=deluan/zsh-in-docker
