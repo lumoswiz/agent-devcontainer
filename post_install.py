@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Post-install configuration for Claude Code devcontainer.
+"""Post-install configuration for the agent harness devcontainer.
 
 Runs on container creation to set up:
 - Onboarding bypass (when CLAUDE_CODE_OAUTH_TOKEN is set)
 - Claude settings (bypassPermissions mode)
+- Codex settings (approval and sandbox bypass, workspace trust)
+- Prime Agent state directory
 - Tmux configuration (200k history, mouse support)
 - Directory ownership fixes for mounted volumes
 """
@@ -11,6 +13,7 @@ Runs on container creation to set up:
 import contextlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -118,6 +121,71 @@ def setup_claude_settings():
     )
 
 
+def setup_codex_settings():
+    """Configure Codex to trust the workspace and use the container as its sandbox."""
+    codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+    codex_home.mkdir(parents=True, exist_ok=True)
+    config_file = codex_home / "config.toml"
+    existing = config_file.read_text(encoding="utf-8") if config_file.exists() else ""
+
+    lines = existing.splitlines(keepends=True)
+    first_table_index = next(
+        (
+            index
+            for index, line in enumerate(lines)
+            if re.match(r"^\s*\[", line)
+        ),
+        len(lines),
+    )
+    top_level = "".join(lines[:first_table_index])
+    desired_settings = (
+        ("approval_policy", 'approval_policy = "never"'),
+        ("sandbox_mode", 'sandbox_mode = "danger-full-access"'),
+    )
+    missing_settings = [
+        setting
+        for key, setting in desired_settings
+        if not re.search(rf"(?m)^\s*{re.escape(key)}\s*=", top_level)
+    ]
+
+    content = existing
+    if missing_settings:
+        insertion = "\n".join(missing_settings) + "\n"
+        if first_table_index < len(lines):
+            prefix = "".join(lines[:first_table_index])
+            suffix = "".join(lines[first_table_index:])
+            if prefix and not prefix.endswith("\n"):
+                prefix += "\n"
+            content = prefix + insertion + ("\n" if prefix else "") + suffix
+        else:
+            if content and not content.endswith("\n"):
+                content += "\n"
+            content += insertion
+
+    workspace_table = re.compile(
+        r'^\s*\[\s*projects\s*\.\s*"/workspace"\s*\]\s*(?:#.*)?$',
+        re.MULTILINE,
+    )
+    if not workspace_table.search(existing):
+        if content and not content.endswith("\n"):
+            content += "\n"
+        if content and not content.endswith("\n\n"):
+            content += "\n"
+        content += '[projects."/workspace"]\ntrust_level = "trusted"\n'
+
+    if content != existing:
+        config_file.write_text(content, encoding="utf-8")
+    print(f"[post_install] Codex settings configured: {config_file}", file=sys.stderr)
+
+
+def setup_prime_agent_dirs():
+    """Create Prime Agent's private state directory without permission settings."""
+    agent_dir = Path.home() / ".prime" / "agent"
+    agent_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    agent_dir.chmod(0o700)
+    print(f"[post_install] Prime Agent directory configured: {agent_dir}", file=sys.stderr)
+
+
 def setup_tmux_config():
     """Configure tmux with 200k history, mouse support, and vi keys."""
     tmux_conf = Path.home() / ".tmux.conf"
@@ -172,6 +240,8 @@ def fix_directory_ownership():
 
     dirs_to_fix = [
         Path.home() / ".claude",
+        Path.home() / ".codex",
+        Path.home() / ".prime",
         Path("/commandhistory"),
         Path.home() / ".config" / "gh",
     ]
@@ -296,10 +366,12 @@ def main():
     """Run all post-install configuration."""
     print("[post_install] Starting post-install configuration...", file=sys.stderr)
 
+    fix_directory_ownership()
     setup_onboarding_bypass()
     setup_claude_settings()
+    setup_codex_settings()
+    setup_prime_agent_dirs()
     setup_tmux_config()
-    fix_directory_ownership()
     setup_global_gitignore()
 
     print("[post_install] Configuration complete!", file=sys.stderr)
