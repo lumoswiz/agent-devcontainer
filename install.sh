@@ -35,7 +35,7 @@ Commands:
     update              Update devc to the latest version
     template [dir]      Copy devcontainer template to directory (default: current)
     exec <cmd>          Execute a command in the running container
-    upgrade             Upgrade Claude Code to latest version
+    upgrade             Upgrade Claude Code, Codex, and Prime Agent
     mount <host> <cont> Add a mount to the devcontainer (recreates container)
     sync [project] [--trusted]  Sync sessions from devcontainers to host
     cp <cont> <host>    Copy files/directories from container to host
@@ -50,7 +50,7 @@ Examples:
     devc self-install           # Install devc to PATH
     devc update                 # Update to latest version
     devc exec ls -la            # Run command in container
-    devc upgrade                # Upgrade Claude Code to latest
+    devc upgrade                # Upgrade Claude Code, Codex, and Prime Agent
     devc mount ~/data /data     # Add mount to container
     devc sync                   # Sync sessions from all devcontainers
     devc sync crypto            # Sync only matching devcontainer
@@ -124,6 +124,8 @@ extract_mounts_to_file() {
       select(
         (contains("target=/commandhistory,") | not) and
         (contains("target=/home/vscode/.claude,") | not) and
+        (contains("target=/home/vscode/.codex,") | not) and
+        (contains("target=/home/vscode/.prime,") | not) and
         (contains("target=/home/vscode/.config/gh,") | not) and
         (contains("target=/home/vscode/.gitconfig,") | not) and
         (contains("target=/workspace/.devcontainer,") | not)
@@ -292,10 +294,17 @@ cmd_upgrade() {
 
   check_devcontainer_cli
   log_info "Upgrading Claude Code..."
-
   devcontainer exec --workspace-folder "$workspace_folder" claude update
 
-  log_success "Claude Code upgraded"
+  log_info "Upgrading Codex..."
+  devcontainer exec --workspace-folder "$workspace_folder" \
+    zsh -lc 'env -u NPM_CONFIG_IGNORE_SCRIPTS npm install -g @openai/codex@latest'
+
+  log_info "Upgrading Prime Agent..."
+  devcontainer exec --workspace-folder "$workspace_folder" \
+    prime-agent update --force
+
+  log_success "All harnesses upgraded"
 }
 
 cmd_mount() {
@@ -615,7 +624,7 @@ cmd_update() {
 
   if ! git -C "$SCRIPT_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
     log_error "Not a git repository: $SCRIPT_DIR"
-    log_info "Re-clone with: rm -rf ~/.claude-devcontainer && git clone https://github.com/trailofbits/claude-code-devcontainer ~/.claude-devcontainer"
+    log_info "Re-clone with: rm -rf ~/.claude-devcontainer && git clone https://github.com/lumoswiz/agent-devcontainer ~/.claude-devcontainer"
     exit 1
   fi
 
