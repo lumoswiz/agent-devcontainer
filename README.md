@@ -1,6 +1,6 @@
 # Agent Devcontainer
 
-Personal fork of [trailofbits/claude-code-devcontainer](https://github.com/trailofbits/claude-code-devcontainer) adding OpenAI Codex CLI and Prime Intellect Prime Agent. See upstream for the original setup and security documentation.
+Personal fork of [trailofbits/claude-code-devcontainer](https://github.com/trailofbits/claude-code-devcontainer) adding OpenAI Codex CLI. See upstream for the original setup and security documentation.
 
 This fork is for personal use and is not intended for upstream submission.
 
@@ -23,7 +23,6 @@ devc shell
 | Harness | Authentication | Persistent state |
 |---------|----------------|------------------|
 | Codex | Run `codex login`, or export `OPENAI_API_KEY` before `devc rebuild` | `~/.codex` |
-| Prime Agent | Use `/login`, or export `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `PRIME_API_KEY` before `devc rebuild` | `~/.prime` |
 
 ## Acknowledgements
 

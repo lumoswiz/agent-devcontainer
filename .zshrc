@@ -34,8 +34,6 @@ alias fd=fdfind
 alias sg=ast-grep
 alias claude-yolo='claude --dangerously-skip-permissions'
 alias codex-yolo='codex --dangerously-bypass-approvals-and-sandbox'
-# Prime Agent has no permission gate by default, so it needs no bypass flag.
-alias pa='prime-agent'
 alias ll='ls -lah --color=auto'
 alias la='ls -A --color=auto'
 alias l='ls -CF --color=auto'

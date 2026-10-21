@@ -5,7 +5,6 @@ Runs on container creation to set up:
 - Onboarding bypass (when CLAUDE_CODE_OAUTH_TOKEN is set)
 - Claude settings (bypassPermissions mode)
 - Codex settings (approval and sandbox bypass, workspace trust)
-- Prime Agent state directory
 - Tmux configuration (200k history, mouse support)
 - Directory ownership fixes for mounted volumes
 """
@@ -178,14 +177,6 @@ def setup_codex_settings():
     print(f"[post_install] Codex settings configured: {config_file}", file=sys.stderr)
 
 
-def setup_prime_agent_dirs():
-    """Create Prime Agent's private state directory without permission settings."""
-    agent_dir = Path.home() / ".prime" / "agent"
-    agent_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-    agent_dir.chmod(0o700)
-    print(f"[post_install] Prime Agent directory configured: {agent_dir}", file=sys.stderr)
-
-
 def setup_tmux_config():
     """Configure tmux with 200k history, mouse support, and vi keys."""
     tmux_conf = Path.home() / ".tmux.conf"
@@ -241,7 +232,6 @@ def fix_directory_ownership():
     dirs_to_fix = [
         Path.home() / ".claude",
         Path.home() / ".codex",
-        Path.home() / ".prime",
         Path("/commandhistory"),
         Path.home() / ".config" / "gh",
     ]
@@ -370,7 +360,6 @@ def main():
     setup_onboarding_bypass()
     setup_claude_settings()
     setup_codex_settings()
-    setup_prime_agent_dirs()
     setup_tmux_config()
     setup_global_gitignore()
 

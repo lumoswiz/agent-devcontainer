@@ -45,7 +45,6 @@
     "source=devc-${localWorkspaceFolderBasename}-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=devc-${localWorkspaceFolderBasename}-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
     "source=devc-${localWorkspaceFolderBasename}-codex-${devcontainerId},target=/home/vscode/.codex,type=volume",
-    "source=devc-${localWorkspaceFolderBasename}-prime-${devcontainerId},target=/home/vscode/.prime,type=volume",
     "source=devc-${localWorkspaceFolderBasename}-gh-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
     "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly",
@@ -76,8 +75,7 @@
     "GH_TOKEN": "${localEnv:GH_TOKEN:}",
     "GITHUB_TOKEN": "${localEnv:GH_TOKEN:}",
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY:}",
-    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY:}",
-    "PRIME_API_KEY": "${localEnv:PRIME_API_KEY:}"
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY:}"
   },
   "initializeCommand": "test -f \"$HOME/.gitconfig\" || touch \"$HOME/.gitconfig\"",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
