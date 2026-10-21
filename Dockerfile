@@ -71,10 +71,10 @@ RUN ARCH=$(dpkg --print-architecture) && \
   curl -fsSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-${FZF_ARCH}.tar.gz" | tar -xz -C /usr/local/bin
 
 # Create directories and set ownership (combined for fewer layers)
-RUN mkdir -p /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /opt && \
+RUN mkdir -p /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /home/vscode/.omp /opt && \
   touch /commandhistory/.bash_history && \
   touch /commandhistory/.zsh_history && \
-  chown -R vscode:vscode /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /opt
+  chown -R vscode:vscode /commandhistory /workspace /home/vscode/.claude /home/vscode/.codex /home/vscode/.omp /opt
 
 # Set environment variables
 ENV DEVCONTAINER=true
@@ -115,6 +115,23 @@ RUN curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$FNM_D
   ln -sf "$(command -v codex)" /home/vscode/.local/bin/codex && \
   ln -sf "$(command -v node)" /home/vscode/.local/bin/node && \
   ln -sf "$(command -v npm)" /home/vscode/.local/bin/npm
+
+# Install omp (oh-my-pi) from the release binary, verified against the release checksums
+# renovate: datasource=github-releases depName=can1357/oh-my-pi
+ARG OMP_VERSION=18.12.5
+RUN ARCH=$(dpkg --print-architecture) && \
+  case "${ARCH}" in \
+    amd64) OMP_ARCH="linux-x64" ;; \
+    arm64) OMP_ARCH="linux-arm64" ;; \
+    *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
+  esac && \
+  OMP_TMP=$(mktemp -d) && cd "${OMP_TMP}" && \
+  curl -fsSLO "https://github.com/can1357/oh-my-pi/releases/download/v${OMP_VERSION}/omp-${OMP_ARCH}" && \
+  curl -fsSLO "https://github.com/can1357/oh-my-pi/releases/download/v${OMP_VERSION}/SHA256SUMS.txt" && \
+  grep -E "  omp-${OMP_ARCH}\$" SHA256SUMS.txt | sha256sum -c - && \
+  install -m 0755 "omp-${OMP_ARCH}" /home/vscode/.local/bin/omp && \
+  cd / && rm -rf "${OMP_TMP}" && \
+  omp --version
 
 # Install Oh My Zsh
 # renovate: datasource=github-releases depName=deluan/zsh-in-docker

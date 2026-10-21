@@ -5,6 +5,7 @@ Runs on container creation to set up:
 - Onboarding bypass (when CLAUDE_CODE_OAUTH_TOKEN is set)
 - Claude settings (bypassPermissions mode)
 - Codex settings (approval and sandbox bypass, workspace trust)
+- omp settings (yolo approval mode)
 - Tmux configuration (200k history, mouse support)
 - Directory ownership fixes for mounted volumes
 """
@@ -177,6 +178,33 @@ def setup_codex_settings():
     print(f"[post_install] Codex settings configured: {config_file}", file=sys.stderr)
 
 
+def setup_omp_settings():
+    """Pin omp's tool approval mode to yolo (already the default) in ~/.omp/agent/config.yml."""
+    try:
+        subprocess.run(
+            ["omp", "config", "set", "tools.approvalMode", "yolo"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.CalledProcessError as e:
+        print(
+            f"[post_install] Warning: omp config set exited {e.returncode}: "
+            f"{e.stderr.strip()}",
+            file=sys.stderr,
+        )
+        return
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as e:
+        print(
+            f"[post_install] Warning: could not run omp ({e}) — "
+            "approval mode not pinned",
+            file=sys.stderr,
+        )
+        return
+    print("[post_install] omp settings configured: tools.approvalMode=yolo", file=sys.stderr)
+
+
 def setup_tmux_config():
     """Configure tmux with 200k history, mouse support, and vi keys."""
     tmux_conf = Path.home() / ".tmux.conf"
@@ -232,6 +260,7 @@ def fix_directory_ownership():
     dirs_to_fix = [
         Path.home() / ".claude",
         Path.home() / ".codex",
+        Path.home() / ".omp",
         Path("/commandhistory"),
         Path.home() / ".config" / "gh",
     ]
@@ -360,6 +389,7 @@ def main():
     setup_onboarding_bypass()
     setup_claude_settings()
     setup_codex_settings()
+    setup_omp_settings()
     setup_tmux_config()
     setup_global_gitignore()
 

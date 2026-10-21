@@ -35,7 +35,7 @@ Commands:
     update              Update devc to the latest version
     template [dir]      Copy devcontainer template to directory (default: current)
     exec <cmd>          Execute a command in the running container
-    upgrade             Upgrade Claude Code and Codex
+    upgrade             Upgrade Claude Code, Codex, and omp
     mount <host> <cont> Add a mount to the devcontainer (recreates container)
     sync [project] [--trusted]  Sync sessions from devcontainers to host
     cp <cont> <host>    Copy files/directories from container to host
@@ -50,7 +50,7 @@ Examples:
     devc self-install           # Install devc to PATH
     devc update                 # Update to latest version
     devc exec ls -la            # Run command in container
-    devc upgrade                # Upgrade Claude Code and Codex
+    devc upgrade                # Upgrade Claude Code, Codex, and omp
     devc mount ~/data /data     # Add mount to container
     devc sync                   # Sync sessions from all devcontainers
     devc sync crypto            # Sync only matching devcontainer
@@ -125,6 +125,7 @@ extract_mounts_to_file() {
         (contains("target=/commandhistory,") | not) and
         (contains("target=/home/vscode/.claude,") | not) and
         (contains("target=/home/vscode/.codex,") | not) and
+        (contains("target=/home/vscode/.omp,") | not) and
         (contains("target=/home/vscode/.config/gh,") | not) and
         (contains("target=/home/vscode/.gitconfig,") | not) and
         (contains("target=/workspace/.devcontainer,") | not)
@@ -298,6 +299,9 @@ cmd_upgrade() {
   log_info "Upgrading Codex..."
   devcontainer exec --workspace-folder "$workspace_folder" \
     zsh -lc 'env -u NPM_CONFIG_IGNORE_SCRIPTS npm install -g @openai/codex@latest'
+
+  log_info "Upgrading omp..."
+  devcontainer exec --workspace-folder "$workspace_folder" omp update
 
   log_success "All harnesses upgraded"
 }
