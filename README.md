@@ -22,8 +22,9 @@ devc shell
 
 | Harness | Authentication | Persistent state |
 |---------|----------------|------------------|
+| Claude Code | Run `claude` and sign in with your Claude subscription. No API key is passed in from the host | `~/.claude` |
 | Codex | Run `codex login`, or export `OPENAI_API_KEY` before `devc rebuild` | `~/.codex` |
-| omp | Sign in during first-run setup, or export `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` before `devc rebuild`. Runs in yolo approval mode | `~/.omp` |
+| omp | Sign in during first-run setup, or export `OPENAI_API_KEY` before `devc rebuild`. Runs in yolo approval mode | `~/.omp` |
 
 ## Acknowledgements
 
