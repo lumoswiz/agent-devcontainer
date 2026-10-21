@@ -1,6 +1,7 @@
 # Claude Code Devcontainer
 # Based on Microsoft devcontainer image for better devcontainer integration
-FROM ghcr.io/astral-sh/uv:0.10@sha256:10902f58a1606787602f303954cea099626a4adb02acbac4c69920fe9d278f82 AS uv
+# uv >= 0.13.4 ships patched webpki roots (eMudhra intermediate CA compromise)
+FROM ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b AS uv
 FROM mcr.microsoft.com/devcontainers/base:ubuntu24.04@sha256:4bcb1b466771b1ba1ea110e2a27daea2f6093f9527fb75ee59703ec89b5561cb
 
 ARG TZ
@@ -10,6 +11,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install additional system packages (base image already includes git, curl, sudo, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  # System CA store (patched for the eMudhra intermediate CA compromise)
+  ca-certificates \
   # Sandboxing support for Claude Code
   bubblewrap \
   socat \
@@ -31,6 +34,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   iptables \
   iproute2 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Refuse to build with a CA store that still trusts the compromised eMudhra intermediates
+ARG CA_CERTIFICATES_MIN_VERSION=20260816ubuntu0.24.04.1
+RUN CA_VERSION=$(dpkg-query -W -f='${Version}' ca-certificates) && \
+  if ! dpkg --compare-versions "${CA_VERSION}" ge "${CA_CERTIFICATES_MIN_VERSION}"; then \
+    echo "ca-certificates ${CA_VERSION} is older than ${CA_CERTIFICATES_MIN_VERSION}" && exit 1; \
+  fi
+
+# Point every TLS client at the system CA store instead of its bundled copy
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV UV_NATIVE_TLS=1
+ENV NODE_OPTIONS=--use-openssl-ca
 
 # Install git-delta
 # renovate: datasource=github-releases depName=dandavison/delta
