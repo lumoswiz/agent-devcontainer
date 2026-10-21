@@ -45,7 +45,7 @@ RUN CA_VERSION=$(dpkg-query -W -f='${Version}' ca-certificates) && \
 # Point every TLS client at the system CA store instead of its bundled copy
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-ENV UV_NATIVE_TLS=1
+ENV UV_SYSTEM_CERTS=1
 ENV NODE_OPTIONS=--use-openssl-ca
 
 # Install git-delta
