@@ -117,7 +117,8 @@ extract_mounts_to_file() {
 
   temp_file=$(mktemp)
 
-  # Filter out default mounts by target path (immune to project name changes)
+  # Filter out default mounts by target path (immune to project name changes).
+  # .prime is a retired default (Prime Agent); filtering it drops the stale mount.
   local custom_mounts
   custom_mounts=$(jq -c '
     .mounts // [] | map(
@@ -126,6 +127,7 @@ extract_mounts_to_file() {
         (contains("target=/home/vscode/.claude,") | not) and
         (contains("target=/home/vscode/.codex,") | not) and
         (contains("target=/home/vscode/.omp,") | not) and
+        (contains("target=/home/vscode/.prime,") | not) and
         (contains("target=/home/vscode/.config/gh,") | not) and
         (contains("target=/home/vscode/.gitconfig,") | not) and
         (contains("target=/workspace/.devcontainer,") | not)
